@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WhatsApp Archive Reader</title>
+<style>
+:root{color-scheme:dark;--bg:#0b141a;--panel:#111b21;--panel2:#202c33;--line:#26343b;--text:#e9edef;--muted:#8696a0;--green:#005c4b;--accent:#00a884}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}button,input{font:inherit}button{cursor:pointer;border:0;border-radius:8px;padding:9px 13px;background:var(--accent);color:#062b24;font-weight:650}button.secondary{background:var(--panel2);color:var(--text)}.app{height:100dvh;min-height:420px;display:grid;grid-template-columns:310px 1fr;max-width:1500px;margin:auto;background:var(--panel)}aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0}.brand{padding:18px 18px 12px;font-weight:750;font-size:18px;display:flex;align-items:center;justify-content:space-between}.sub{color:var(--muted);font-size:12px;font-weight:400}.tools{padding:10px 14px;display:grid;gap:8px}.search{width:100%;background:var(--panel2);border:1px solid transparent;border-radius:8px;padding:11px 12px;color:var(--text);outline:none}.search:focus{border-color:var(--accent)}.chatlist{overflow:auto;flex:1}.chatitem{padding:13px 16px;border-top:1px solid var(--line);cursor:pointer}.chatitem:hover,.chatitem.active{background:var(--panel2)}.chatitem strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chatitem small{color:var(--muted)}main{display:flex;flex-direction:column;min-width:0;background:#0b141a}.top{padding:13px 20px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;justify-content:space-between}.top strong{font-size:15px}.top small{display:block;color:var(--muted)}.top-left{display:flex;align-items:center;gap:10px;min-width:0}.top-actions{display:flex;align-items:center;gap:8px}.messages{flex:1;overflow:auto;padding:22px clamp(12px,5vw,70px);display:flex;flex-direction:column;gap:7px;background-color:#0b141a;background-image:radial-gradient(#18252b 0.7px,transparent .7px);background-size:18px 18px}.date{align-self:center;background:#18252b;color:#c5d1d6;border-radius:7px;padding:5px 11px;font-size:12px;margin:10px 0}.msg{max-width:min(78%,720px);padding:8px 10px 6px;border-radius:9px;background:#202c33;align-self:flex-start;box-shadow:0 1px 1px #0003;overflow-wrap:anywhere;white-space:pre-wrap}.msg.mine{background:#005c4b;align-self:flex-end}.sender{font-size:12px;color:#53bdeb;font-weight:700;margin-bottom:3px}.body{white-space:pre-wrap}.time{font-size:10px;color:#b4c4ca;text-align:right;margin-top:4px}.attachment{display:block;margin-top:7px;color:#d8f7ef}.attachment img{display:block;max-width:min(360px,100%);max-height:360px;border-radius:6px;margin:5px 0}.attachment video{max-width:100%;max-height:360px}.attachment audio{max-width:100%}.system{align-self:center;max-width:85%;background:#18252b;color:#c5d1d6;padding:6px 10px;border-radius:7px;text-align:center;font-size:12px}.empty{margin:auto;text-align:center;color:var(--muted);max-width:460px;padding:30px}.empty h1{color:var(--text);font-size:24px}.drop{border:1px dashed #46616b;border-radius:12px;padding:22px;margin-top:18px}.bottom{padding:10px 18px;background:var(--panel);border-top:1px solid var(--line);display:flex;justify-content:space-between;color:var(--muted);font-size:12px}.hidden{display:none!important}.notice{padding:9px 14px;color:#ffd479;background:#3a2e16;font-size:12px}.count{color:var(--muted);font-size:12px}.filelabel{display:block}.filelabel input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.mobileback{display:none}
+@media(max-width:700px){.app{grid-template-columns:1fr}.app aside{display:none}.app.showlist aside{display:flex}.app.showlist main{display:none}.top{padding:10px 12px;flex-wrap:wrap}.messages{padding:14px 9px}.msg{max-width:90%}.mobileback{display:inline-block!important}.top-actions{margin-left:auto}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<aside>
+ <div class="brand"><span>WhatsApp Archive Reader</span><span>💬</span></div>
+ <div class="tools">
+  <label class="filelabel"><button id="openZip" type="button" style="width:100%">＋ Open conversation ZIP</button><input id="zip" type="file" accept=".zip,application/zip"></label>
+  <input class="search" id="chatSearch" placeholder="Find a conversation…" />
+  <div class="sub" id="archiveInfo">No archive loaded</div>
+ </div>
+ <div class="chatlist" id="chatlist"></div>
+</aside>
+<main>
+ <div class="top"><div class="top-left"><button class="secondary mobileback" id="back" type="button">‹</button><div><strong id="chatTitle">No conversation open</strong><small id="chatSub">Choose a WhatsApp export ZIP to begin</small></div></div><div class="top-actions"><input class="search" id="messageSearch" placeholder="Search messages…" style="max-width:220px"><button class="secondary" id="perspective" type="button" disabled>Switch view</button><div class="count" id="shown"></div></div></div>
+ <div class="notice hidden" id="notice" role="status"></div>
+ <div class="messages" id="messages">
+  <div class="empty"><div style="font-size:42px">🗂️</div><h1>Your chats, on your device.</h1><p>Open a WhatsApp exported ZIP. The archive is processed locally in this browser; nothing is uploaded.</p><div class="drop" id="drop"><b>Drop a .zip file here</b><p class="sub">Or use “Open conversation ZIP”. Supports common Android and iOS text exports.</p></div></div>
+ </div>
+ <div class="bottom"><span id="status">Offline-ready · Local processing</span><span id="footerCount"></span></div>
+</main>
+</div>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+let entries=[], conversations=[], current=-1, objectUrls=new Set(), searchTerm='', perspectiveIndex=0, archiveFile=null;
+const decoder=new TextDecoder('utf-8');
+function setNotice(t){$('notice').textContent=t;$('notice').classList.toggle('hidden',!t)}
+function fmtBytes(n){if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(1)+' MB'}
+function findEOCD(u8){
+ for(let i=u8.length-22;i>=Math.max(0,u8.length-65557);i--)if(u8[i]===0x50&&u8[i+1]===0x4b&&u8[i+2]===0x05&&u8[i+3]===0x06)return i;
+ throw Error('This ZIP archive has no valid end-of-directory record. Make sure you selected the original .zip file, not a .zip.part file.');
+}
+function readZipDirectory(buf){
+ const u=new Uint8Array(buf),v=new DataView(buf),e=findEOCD(u);
+ const count=v.getUint16(e+10,true),cdSize=v.getUint32(e+12,true);let p=v.getUint32(e+16,true);
+ if(count===0xffff||p===0xffffffff||cdSize===0xffffffff)throw Error('This ZIP uses ZIP64, which this reader does not support yet.');
+ if(p+cdSize>u.length)throw Error('The ZIP directory is damaged or incomplete.');
+ const out=[];
+ for(let n=0;n<count;n++){
+  if(p+46>u.length||v.getUint32(p,true)!==0x02014b50)throw Error('Invalid ZIP central directory.');
+  const method=v.getUint16(p+10,true),csize=v.getUint32(p+20,true),usize=v.getUint32(p+24,true),nl=v.getUint16(p+28,true),el=v.getUint16(p+30,true),cl=v.getUint16(p+32,true),off=v.getUint32(p+42,true);
+  if(p+46+nl+el+cl>u.length)throw Error('Damaged ZIP directory entry.');
+  const name=decoder.decode(u.slice(p+46,p+46+nl));
+  out.push({name,method,csize,usize,off});p+=46+nl+el+cl;
+ }
+ return out;
+}
+async function extractEntry(file,e){
+ const header=await file.slice(e.off,e.off+30).arrayBuffer();
+ if(header.byteLength!==30)throw Error('Incomplete ZIP entry: '+e.name);
+ const v=new DataView(header);
+ if(v.getUint32(0,true)!==0x04034b50)throw Error('Bad local ZIP entry: '+e.name);
+ const nl=v.getUint16(26,true),el=v.getUint16(28,true),start=e.off+30+nl+el;
+ if(start+e.csize>file.size)throw Error('Incomplete compressed data: '+e.name);
+ const compressed=new Uint8Array(await file.slice(start,start+e.csize).arrayBuffer());
+ if(e.method===0)return compressed;
+ if(e.method!==8)throw Error('Unsupported ZIP compression method '+e.method+' for '+e.name);
+ if(typeof DecompressionStream==='undefined')throw Error('This browser does not support ZIP decompression. Use an up-to-date Microsoft Edge or Chrome.');
+ try{
+  const ds=new DecompressionStream('deflate-raw');
+  return new Uint8Array(await new Response(new Blob([compressed]).stream().pipeThrough(ds)).arrayBuffer());
+ }catch(err){throw Error('Could not decompress '+e.name+'. The ZIP may be damaged or use unsupported compression. '+err.message)}
+}
+const starts=[
+ /^\u200e?\[(\d{1,4}[\/.-]\d{1,2}[\/.-]\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?)\]\s?(.*)$/,
+ /^\u200e?(\d{1,4}[\/.-]\d{1,2}[\/.-]\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?)\s+-\s+(.*)$/
+];
+function parseChat(text){
+ const lines=text.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+ const out=[];let cur=null;
+ for(const line of lines){
+  let hit=null;for(const re of starts){hit=line.match(re);if(hit)break}
+  if(hit){
+   if(cur)out.push(cur);
+   const rest=hit[2]||'',sep=rest.indexOf(': ');
+   cur=sep<0?{date:hit[1],sender:'',body:rest,system:true}:{date:hit[1],sender:rest.slice(0,sep).replace(/^\u200e/,''),body:rest.slice(sep+2),system:false};
+  }else if(cur){cur.body+='\n'+line}
+ }
+ if(cur)out.push(cur);
+ return out;
+}
+function basename(s){return s.split('/').pop().toLowerCase()}
+function mediaCandidate(body){
+ const m=body.match(/(?:<attached:\s*([^>]+)>|([^\\/\n]+\.(?:jpe?g|png|gif|webp|bmp|mp4|mov|webm|opus|ogg|m4a|mp3|wav|pdf|docx?|xlsx?|pptx?)))/i);
+ return m?(m[1]||m[2]).trim():null;
+}
+function renderSidebar(){
+ const q=$('chatSearch').value.toLowerCase();$('chatlist').innerHTML='';
+ conversations.forEach((c,i)=>{
+  if(q&&!c.name.toLowerCase().includes(q))return;
+  const d=document.createElement('div');d.className='chatitem'+(i===current?' active':'');
+  const strong=document.createElement('strong'),small=document.createElement('small');
+  strong.textContent=c.name;small.textContent=c.count+' messages';d.append(strong,small);d.onclick=()=>openConversation(i);$('chatlist').append(d);
+ });
+}
+function clearUrls(){for(const u of objectUrls)URL.revokeObjectURL(u);objectUrls.clear()}
+async function showMedia(fileName,container){
+ const entry=entries.find(e=>basename(e.name)===basename(fileName));
+ if(!entry){container.textContent='Attachment not found in this ZIP: '+fileName;return}
+ try{
+  const bytes=await extractEntry(archiveFile,entry),blob=new Blob([bytes]),url=URL.createObjectURL(blob);objectUrls.add(url);
+  const ext=basename(fileName).split('.').pop();
+  const el=/^(jpe?g|png|gif|webp|bmp)$/i.test(ext)?document.createElement('img'):/^(mp4|mov|webm)$/i.test(ext)?document.createElement('video'):/^(opus|ogg|m4a|mp3|wav)$/i.test(ext)?document.createElement('audio'):null;
+  if(el){el.src=url;if(el.tagName==='VIDEO'||el.tagName==='AUDIO')el.controls=true;container.textContent='';container.append(el)}
+  else{const a=document.createElement('a');a.href=url;a.download=basename(fileName);a.textContent='Open / save attachment: '+basename(fileName);a.className='attachment';container.textContent='';container.append(a)}
+ }catch(err){container.textContent='Could not open attachment: '+err.message}
+}
+function renderMessages(){
+ const box=$('messages');box.innerHTML='';const c=conversations[current];if(!c)return;
+ const list=c.items.filter(m=>!searchTerm||(m.body+' '+m.sender).toLowerCase().includes(searchTerm));
+ $('shown').textContent=list.length+' / '+c.items.length;
+ let lastDate='';
+ list.forEach(m=>{
+  const date=m.date.split(',')[0];if(date!==lastDate){const d=document.createElement('div');d.className='date';d.textContent=date;box.append(d);lastDate=date}
+  if(m.system){const s=document.createElement('div');s.className='system';s.textContent=m.body;box.append(s);return}
+  const el=document.createElement('div');el.className='msg';
+  if(c.participants.length && m.sender===c.participants[perspectiveIndex])el.classList.add('mine');
+  const s=document.createElement('div');s.className='sender';s.textContent=m.sender;el.append(s);
+  const body=document.createElement('div');body.className='body';body.textContent=m.body;el.append(body);
+  const media=mediaCandidate(m.body);if(media){const a=document.createElement('div');a.className='attachment';a.textContent='Loading attachment…';el.append(a);showMedia(media,a)}
+  const t=document.createElement('div');t.className='time';t.textContent=(m.date.match(/,\s*(.*)$/)||[])[1]||'';el.append(t);box.append(el);
+ });
+ if(!list.length){const e=document.createElement('div');e.className='empty';e.textContent='No messages match this search.';box.append(e)}
+ box.scrollTop=box.scrollHeight;$('footerCount').textContent=c.count+' messages';
+}
+function openConversation(i){
+ current=i;searchTerm='';$('messageSearch').value='';perspectiveIndex=0;
+ const c=conversations[i];$('chatTitle').textContent=c.name;$('chatSub').textContent=c.count+' messages · local archive';
+ $('app').classList.remove('showlist');renderSidebar();updatePerspectiveButton();renderMessages();
+}
+function updatePerspectiveButton(){
+ const b=$('perspective');if(!b)return;
+ const c=conversations[current];b.disabled=!c||c.participants.length<2;
+ b.textContent=c&&c.participants.length?'View as: '+c.participants[perspectiveIndex]+' ↻':'Switch view';
+}
+async function loadZip(file){
+ if(!file)return;
+ clearUrls();setNotice('Reading ZIP directory…');$('status').textContent='Reading '+file.name;
+ try{
+  archiveFile=file;const newEntries=readZipDirectory(await file.arrayBuffer());
+  const txts=newEntries.filter(e=>/\.txt$/i.test(e.name)&&!/(readme|\.json$)/i.test(e.name));
+  if(!txts.length)throw Error('No .txt chat export was found. Select the original WhatsApp .zip export, not a .zip.part file.');
+  const parsed=[];
+  for(const e of txts){
+   const bytes=await extractEntry(file,e),txt=decoder.decode(bytes),items=parseChat(txt);
+   if(items.length)parsed.push({name:e.name.split('/').pop().replace(/\.txt$/i,''),items});
+  }
+  if(!parsed.length)throw Error('Found TXT file(s), but could not recognize their message format. This export may use an unsupported date format.');
+  const nextConversations=parsed.map(c=>{
+   const participants=[...new Set(c.items.filter(m=>!m.system&&m.sender).map(m=>m.sender))];
+   return {...c,participants,count:c.items.length};
+  });
+  entries=newEntries;conversations=nextConversations;current=0;
+  renderSidebar();openConversation(0);
+  $('archiveInfo').textContent=entries.length+' ZIP entries · '+fmtBytes(file.size);
+  $('status').textContent='Loaded locally · '+txts.length+' text file(s)';
+  setNotice('Loaded '+conversations.length+' conversation(s). Attachments are extracted only when needed.');
+ }catch(err){setNotice(err.message||String(err));$('status').textContent='Could not load archive';throw err}
+}
+$('openZip').addEventListener('click',()=>$('zip').click());
+$('zip').addEventListener('change',async e=>{
+ const f=e.target.files&&e.target.files[0];if(!f)return;
+ try{await loadZip(f)}catch(err){/* visible error is shown by loadZip */}
+ e.target.value='';
+});
+$('chatSearch').addEventListener('input',renderSidebar);
+$('messageSearch').addEventListener('input',()=>{searchTerm=$('messageSearch').value.toLowerCase();renderMessages()});
+$('back').addEventListener('click',()=>$('app').classList.add('showlist'));
+const drop=$('drop');
+if(drop){
+ drop.addEventListener('dragover',e=>{e.preventDefault();drop.style.borderColor='var(--accent)'});
+ drop.addEventListener('dragleave',()=>drop.style.borderColor='');
+ drop.addEventListener('drop',e=>{e.preventDefault();drop.style.borderColor='';const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)loadZip(f).catch(()=>{})});
+}
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{if(e.target===document.body){e.preventDefault();const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)loadZip(f).catch(()=>{})}});
+$('perspective').addEventListener('click',()=>{
+ const c=conversations[current];
+ if(!c||c.participants.length<2)return;
+ perspectiveIndex=(perspectiveIndex+1)%c.participants.length;
+ updatePerspectiveButton();renderMessages();
+});
+})();
+</script>
+</body>
+</html>
